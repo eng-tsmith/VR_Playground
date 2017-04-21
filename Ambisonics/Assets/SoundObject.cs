@@ -128,7 +128,7 @@ public class SoundObject : MonoBehaviour {
         // Pulse effect
         if (scale!=0)
         {
-            scale_pulse = scale + Mathf.PingPong(Time.time * 0.5f, 0.2f);
+            scale_pulse = scale + Mathf.PingPong(Time.time * scale * 0.8f, 0.2f * scale);
         }
         else
         {
