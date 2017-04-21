@@ -14,8 +14,7 @@ public class OSC_Receive_iPhone : MonoBehaviour
     private float pad_x;
     private float pad_y;
     private float height;
-    //private float volume;
-
+    private float vol;
 
     // Script initialization
     void Start()
@@ -29,6 +28,7 @@ public class OSC_Receive_iPhone : MonoBehaviour
         pad_x = 0f;
         pad_y = 0f;
         height = 1.5f;
+        vol = 0.8f;
         //volume = 0f;
     }
 
@@ -63,6 +63,13 @@ public class OSC_Receive_iPhone : MonoBehaviour
                     height = float.Parse(item.Value.packets[lastPacketIndex].Data[0].ToString());
 
                     sphere.transform.position = new Vector3(pad_x, height, pad_y);
+                }
+                // Volume fader
+                if (touchosc_object == "/1/vol")
+                {
+                    vol = float.Parse(item.Value.packets[lastPacketIndex].Data[0].ToString());
+
+                    sphere.transform.localScale = new Vector3(vol, vol, vol);
                 }
             }
         }

@@ -12,13 +12,13 @@ using SharpOSC;
 using UnityEngine;
 
 public class sendpos : MonoBehaviour {
-	//UDP shit
-	private static string IP_add = "192.168.83.109";
-	private static int port = 9001;
+	// UDP shit
+	private static string IP_add = "192.168.83.108";
+	private static int port = 5510;
 	private SharpOSC.UDPSender sender = new SharpOSC.UDPSender (IP_add, port);
 
 	// flying sphere
-	GameObject sphere_green;
+	GameObject sphere;
 
 	// Simple mapping function
 	float map2range(float val, float min_old, float max_old, float min_new, float max_new){
@@ -26,59 +26,66 @@ public class sendpos : MonoBehaviour {
 	}
 
 	// Function to send Msg to Linux
-	void sendPos_polar(GameObject pos_arr){
+	void sendPos_polar(GameObject sound_sphere){
 
 		// x and z for plane, y is height
-		float pos_x = pos_arr.GetComponent<Transform> ().position.x;
-		float pos_y = pos_arr.GetComponent<Transform> ().position.y;
-		float pos_z = pos_arr.GetComponent<Transform> ().position.z;
+		float pos_x = sound_sphere.GetComponent<Transform> ().position.x;
+		float pos_y = sound_sphere.GetComponent<Transform> ().position.y;
+		float pos_z = sound_sphere.GetComponent<Transform> ().position.z;
 
-		float azi;
-		float ele;
-		//Debug.Log(pos_x);
-		//Debug.Log(pos_y);
-		//Debug.Log(pos_z);
+        float vol = sound_sphere.GetComponent<Transform>().localScale.x;
 
-		azi = Mathf.Atan2 (pos_x, pos_z)*180/Mathf.PI;
-		ele = Mathf.Atan2(pos_y - 1.6f, Mathf.Sqrt(pos_x*pos_x + pos_z*pos_z))*180/Mathf.PI;
+        float rad = Mathf.Sqrt(pos_x * pos_x + pos_z * pos_z + (pos_y - 1.6f) * (pos_y - 1.6f));
+        float azi = Mathf.Atan2(pos_x, pos_z) * 180 / Mathf.PI;
+        float ele = Mathf.Atan2(pos_y - 1.6f, Mathf.Sqrt(pos_x * pos_x + pos_z * pos_z)) * 180 / Mathf.PI;
 
-		var msg_azi = new SharpOSC.OscMessage ("/0x00/azi", azi);
-		var msg_ele = new SharpOSC.OscMessage ("/0x00/ele", ele);
+        if (rad != 0f) {
+            vol = vol / rad;
+        }
+        
 
-		sender.Send(msg_azi);
-		sender.Send(msg_ele);
-	}
+        //Debug.Log(pos_x);
+        //Debug.Log(pos_y);
+        //Debug.Log(pos_z);
+        //Debug.Log(vol);
+
+        var msg_azi = new SharpOSC.OscMessage ("/0x00/azi", azi);
+        var msg_ele = new SharpOSC.OscMessage("/0x00/ele", ele);
+        var msg_vol = new SharpOSC.OscMessage("/0x00/gain", vol);
+
+        sender.Send(msg_azi);
+        sender.Send(msg_ele);
+        sender.Send(msg_vol);
+    }
 
 
-	// Function to send Msg to Linux
-	void sendPos_cartesian(GameObject pos_arr){
+	//// Function to send Msg to Linux
+	//void sendPos_cartesian(GameObject pos_arr){
 
-		// x and z for plane, y is height; Unity uses lefthanded system!!!! x to the right y up z to screen
-		float pos_x = pos_arr.GetComponent<Transform> ().position.x;
-		float pos_y = pos_arr.GetComponent<Transform> ().position.y;
-		float pos_z = pos_arr.GetComponent<Transform> ().position.z;
+	//	// x and z for plane, y is height; Unity uses lefthanded system!!!! x to the right y up z to screen
+	//	float pos_x = pos_arr.GetComponent<Transform> ().position.x;
+	//	float pos_y = pos_arr.GetComponent<Transform> ().position.y;
+	//	float pos_z = pos_arr.GetComponent<Transform> ().position.z;
 
-		// OpenAL uses OpenGL right handed system!!!!! transform to x to left y up z to screen
-		var msg_pos = new SharpOSC.OscMessage ("/set_source_position", "sphere", -pos_x, pos_y - 1.6, pos_z);
+	//	// OpenAL uses OpenGL right handed system!!!!! transform to x to left y up z to screen
+	//	var msg_pos = new SharpOSC.OscMessage ("/set_source_position", "sphere", -pos_x, pos_y - 1.6, pos_z);
 
-		sender.Send(msg_pos);
-
-	}
+	//	sender.Send(msg_pos);
+    //}
 
 	// Use this for initialization
 	void Start () {
-		sphere_green = GameObject.Find ("Sphere_path");
-		sender.Send (new SharpOSC.OscMessage ("/new_source", "sphere"));
+        sphere = GameObject.Find ("Sphere");
 	}
 	
 	// Update is called once per frame
 	void Update () {
 		// Found sphere?
-		if (sphere_green == null) {
+		if (sphere == null) {
 			Debug.Log("Sphere not initialized");
 			return;
 		}
 
-		sendPos_cartesian(sphere_green);
+        sendPos_polar(sphere);
 	}
 }
