@@ -7,6 +7,14 @@ public class SoundObject : MonoBehaviour {
     //-------------------------------------
     // Attributes
     //-------------------------------------
+	// VR stuff
+	private SteamVR_TrackedObject trackedObj;
+	private SteamVR_Controller.Device Controller
+	{
+		get { return SteamVR_Controller.Input ((int)trackedObj.index);}
+	}
+	public GameObject Camera_rig;
+	public GameObject VR_headset;
     // GameObject transform data 
     public GameObject gameobject_sound;
     private float pos_x;
@@ -67,6 +75,9 @@ public class SoundObject : MonoBehaviour {
     //-------------------------------------
     // Use this for initialization
     void Start () {
+		// Find VR headset
+		Camera_rig = GameObject.Find("[CameraRig]");
+		//VR_headset = Camera_rig.transform.Find ("Camera (head)");
         // Find Gameobject the script is attached to
         gameobject_sound = this.gameObject;
         // OSC receive init
@@ -87,6 +98,9 @@ public class SoundObject : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		// Controller Connected?
+		Debug.Log(Camera_rig.name);
+		//Debug.Log(VR_headset.name);
         // Receive TouchOSC data
         OSCHandler.Instance.UpdateLogs();
         servers = OSCHandler.Instance.Servers;
