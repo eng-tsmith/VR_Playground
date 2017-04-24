@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿#define USE_VR
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using SharpOSC;
@@ -8,13 +10,14 @@ public class SoundObject : MonoBehaviour {
     // Attributes
     //-------------------------------------
 	// VR stuff
-	private SteamVR_TrackedObject trackedObj;
-	private SteamVR_Controller.Device Controller
-	{
-		get { return SteamVR_Controller.Input ((int)trackedObj.index);}
-	}
-	public GameObject Camera_rig;
-	public GameObject VR_headset;
+	// Contains a HMD tracked object that we can use to find the user's gaze
+	#if (USE_VR)
+		public Transform VR_head;
+		public GameObject cam_rig;
+	#endif
+	private float head_pos_x;
+	private float head_pos_y;
+	private float head_pos_z;
     // GameObject transform data 
     public GameObject gameobject_sound;
     private float pos_x;
@@ -52,9 +55,9 @@ public class SoundObject : MonoBehaviour {
     {
         // Calculate polar coordinates
         float vol = scale;
-        float rad = Mathf.Sqrt(pos_x * pos_x + pos_z * pos_z + (pos_y - 1.6f) * (pos_y - 1.6f));
+        float rad = Mathf.Sqrt(pos_x * pos_x + pos_z * pos_z + pos_y * pos_y);
         float azi = Mathf.Atan2(pos_x, pos_z) * 180 / Mathf.PI;
-        float ele = Mathf.Atan2(pos_y - 1.6f, Mathf.Sqrt(pos_x * pos_x + pos_z * pos_z)) * 180 / Mathf.PI;
+        float ele = Mathf.Atan2(pos_y, Mathf.Sqrt(pos_x * pos_x + pos_z * pos_z)) * 180 / Mathf.PI;
         // Include distance for volume
         if (rad != 0f)
         {
@@ -74,10 +77,13 @@ public class SoundObject : MonoBehaviour {
     // Execution
     //-------------------------------------
     // Use this for initialization
-    void Start () {
-		// Find VR headset
-		Camera_rig = GameObject.Find("[CameraRig]");
-		//VR_headset = Camera_rig.transform.Find ("Camera (head)");
+    void Start () 
+	{
+		// VR headset
+		#if (USE_VR)
+			cam_rig = GameObject.Find("[CameraRig]");
+			VR_head = cam_rig.transform.GetChild(2);
+		#endif
         // Find Gameobject the script is attached to
         gameobject_sound = this.gameObject;
         // OSC receive init
@@ -92,15 +98,21 @@ public class SoundObject : MonoBehaviour {
         fader_vol = 0.8f;
         // Pulsing
         MIN_SCALE = 0.75f;
-
-
-    }
+	}
 	
 	// Update is called once per frame
-	void Update () {
-		// Controller Connected?
-		Debug.Log(Camera_rig.name);
-		//Debug.Log(VR_headset.name);
+	void Update () 
+	{
+		// Track VR headset
+		#if (USE_VR)
+			head_pos_x = VR_head.transform.position.x;
+			head_pos_y = VR_head.transform.position.y;
+			head_pos_z = VR_head.transform.position.z;
+		#else
+			head_pos_x = 0;
+			head_pos_y = 0;
+			head_pos_z = 0;
+		#endif
         // Receive TouchOSC data
         OSCHandler.Instance.UpdateLogs();
         servers = OSCHandler.Instance.Servers;
@@ -138,7 +150,7 @@ public class SoundObject : MonoBehaviour {
         pos_z = pad_y;
         scale = fader_vol;
         // Send Audio data via OSC
-        sendPos_polar(pos_x, pos_y, pos_z, scale);
+		sendPos_polar(pos_x - head_pos_x, pos_y - head_pos_y, pos_z - head_pos_z, scale);
         // Pulse effect
         if (scale!=0)
         {
