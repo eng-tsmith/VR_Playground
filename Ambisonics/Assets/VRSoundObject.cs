@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using SharpOSC;
 
-public class SoundObject : MonoBehaviour {
+public class VRSoundObject : MonoBehaviour {
     //-------------------------------------
     // Attributes
     //-------------------------------------
@@ -113,6 +113,8 @@ public class SoundObject : MonoBehaviour {
 			head_pos_y = 0;
 			head_pos_z = 0;
 		#endif
+
+
         // Receive TouchOSC data
         OSCHandler.Instance.UpdateLogs();
         servers = OSCHandler.Instance.Servers;
@@ -144,6 +146,9 @@ public class SoundObject : MonoBehaviour {
                 }
             }
         }
+
+
+
         // Store current transform data
         pos_x = pad_x;
         pos_y = fader_height;
