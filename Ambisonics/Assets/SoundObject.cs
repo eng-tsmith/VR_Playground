@@ -1,4 +1,5 @@
 ﻿#define USE_VR
+#define USE_TOUCHOSC
 
 using System.Collections;
 using System.Collections.Generic;
@@ -11,10 +12,10 @@ public class SoundObject : MonoBehaviour {
     //-------------------------------------
 	// VR stuff
 	// Contains a HMD tracked object that we can use to find the user's gaze
-	#if (USE_VR)
-		public Transform VR_head;
-		public GameObject cam_rig;
-	#endif
+#if (USE_VR)
+	public Transform VR_head;
+	public GameObject cam_rig;
+#endif
 	private float head_pos_x;
 	private float head_pos_y;
 	private float head_pos_z;
@@ -28,15 +29,19 @@ public class SoundObject : MonoBehaviour {
     private static string IP_add = "192.168.83.108"; // TODO link to values in Inspector
     private static int port = 5510;
     private UDPSender sender = new UDPSender(IP_add, port);
-    // OSC receive
+    // OSC receive (TouchOSC)
+#if (USE_TOUCHOSC)
     private Dictionary<string, ServerLog> servers;
     private Dictionary<string, ClientLog> clients;
+#endif
     // TouchOSC data
+#if (USE_TOUCHOSC)
     private string touchosc_object;
     private float pad_x;
     private float pad_y;
     private float fader_height;
     private float fader_vol;
+#endif
     // Pulsing
     private float MIN_SCALE;
     private float scale_pulse;
@@ -87,6 +92,7 @@ public class SoundObject : MonoBehaviour {
         // Find Gameobject the script is attached to
         gameobject_sound = this.gameObject;
         // OSC receive init
+#if (USE_TOUCHOSC)
         OSCHandler.Instance.Init();
         servers = new Dictionary<string, ServerLog>();
         clients = new Dictionary<string, ClientLog>();
@@ -96,6 +102,7 @@ public class SoundObject : MonoBehaviour {
         pad_y = 0f;
         fader_height = 1.5f;
         fader_vol = 0.8f;
+#endif
         // Pulsing
         MIN_SCALE = 0.75f;
 	}
@@ -108,12 +115,13 @@ public class SoundObject : MonoBehaviour {
 			head_pos_x = VR_head.transform.position.x;
 			head_pos_y = VR_head.transform.position.y;
 			head_pos_z = VR_head.transform.position.z;
-		#else
-			head_pos_x = 0;
-			head_pos_y = 0;
-			head_pos_z = 0;
-		#endif
+#else
+			head_pos_x = 0f;
+			head_pos_y = 0f;
+			head_pos_z = 0f;
+#endif
         // Receive TouchOSC data
+#if (USE_TOUCHOSC)
         OSCHandler.Instance.UpdateLogs();
         servers = OSCHandler.Instance.Servers;
         clients = OSCHandler.Instance.Clients;
@@ -149,8 +157,15 @@ public class SoundObject : MonoBehaviour {
         pos_y = fader_height;
         pos_z = pad_y;
         scale = fader_vol;
+#else 
+        // Use current position of GameObject 
+        pos_x = gameobject_sound.transform.position.x ;
+        pos_y = gameobject_sound.transform.position.y ;
+        pos_z = gameobject_sound.transform.position.z ;
+        scale = MIN_SCALE;
+#endif
         // Send Audio data via OSC
-		sendPos_polar(pos_x - head_pos_x, pos_y - head_pos_y, pos_z - head_pos_z, scale);
+        sendPos_polar(pos_x - head_pos_x, pos_y - head_pos_y, pos_z - head_pos_z, scale);
         // Pulse effect
         if (scale!=0)
         {
@@ -160,9 +175,12 @@ public class SoundObject : MonoBehaviour {
         {
             scale_pulse = scale;
         }
-        // Update visualisation
-        gameobject_sound.transform.position = new Vector3(pos_x, pos_y, pos_z);
         gameobject_sound.transform.localScale = new Vector3(scale_pulse, scale_pulse, scale_pulse);
-
+        // Update visualisation after receiving TouchOSC
+#if (USE_TOUCHOSC)
+        // Update visualisation after receiving TouchOSC
+        gameobject_sound.transform.position = new Vector3(pos_x, pos_y, pos_z);
+#endif
+    
     }
 }
